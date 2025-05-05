@@ -10,7 +10,9 @@ public class MockDataService {
 				
 				⚡ Próximo jogo (Mock): 
 				FURIA vs NAVI - 20/05 - ESL Pro League
-				Local: Dallas, EUA""";
+				PGL ASTANA 2025 - 10/05/25 à 18/05/25
+				IEM Dallas 2025 - 19/05/25 à 25/05/2025
+				""";
 	}
 	
 	public String getLastMatch() {
