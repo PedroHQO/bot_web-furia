@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>FURIA Bot</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #000;
+            color: #FFD700;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 800px;
+        }
+        
+        .logo {
+            height: 60px;
+            margin-right: 15px;
+        }
+        
+        .title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #FFD700;
+        }
+        
+        .chat-container {
+            width: 100%;
+            max-width: 800px;
+            border: 2px solid #FFD700;
+            border-radius: 10px;
+            overflow: hidden;
+            background-color: #111;
+        }
+        
+        .messages {
+            height: 500px;
+            overflow-y: auto;
+            padding: 15px;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            border-radius: 8px;
+            background-color: #1A1A1A;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        .bot-message {
+            border-left: 4px solid #FFD700;
+        }
+        
+        .user-message {
+            border-left: 4px solid #8B0000;
+            margin-left: auto;
+            background-color: #1F1F1F;
+            max-width: 80%;
+        }
+        
+        .sender {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #FFD700;
+        }
+        
+        .user-input {
+            display: flex;
+            padding: 15px;
+            background-color: #1A1A1A;
+        }
+        
+        #messageInput {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #FFD700;
+            border-radius: 5px;
+            background-color: #000;
+            color: #FFF;
+        }
+        
+        button {
+            margin-left: 10px;
+            padding: 10px 20px;
+            background-color: #FFD700;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background-color: #FFC000;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Melhorias para listas e links */
+        ul {
+            padding-left: 20px;
+            margin: 5px 0;
+        }
+        
+        li {
+            margin-bottom: 5px;
+        }
+        
+        a {
+            color: #FFD700;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <!-- Adicione sua logo aqui -->
+        <img src="furia-logo.png" alt="FURIA Logo" class="logo">
+        <div class="title">FURIA Bot</div>
+    </div>
+    
+    <div class="chat-container">
+        <div class="messages" id="messages"></div>
+        <div class="user-input">
+            <input type="text" id="messageInput" placeholder="Digite sua mensagem..." autofocus>
+            <button onclick="sendMessage()">Enviar</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.5/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <script>
+        const messagesDiv = document.getElementById('messages');
+        const messageInput = document.getElementById('messageInput');
+        let stompClient = null;
+        
+        function connect() {
+            const socket = new SockJS('/ws-furia');
+            stompClient = Stomp.over(socket);
+            stompClient.connect({}, function(frame) {
+                stompClient.subscribe('/topic/messages', function(message) {
+                    showMessage(JSON.parse(message.body));
+                });
+            }, function(error){
+				console.log('Erro na conexão: ' + error);
+				
+				showMessage({
+					sender: "Sistema",
+					content: "⚠️ Conexão perdida. Tentando reconectar..."
+				});
+				setTimeout(conect, 5000);
+            });
+        }
+        
+        function showMessage(message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${message.sender.includes('Bot') ? 'bot-message' : 'user-message'}`;
+            
+            const senderDiv = document.createElement('div');
+            senderDiv.className = 'sender';
+            senderDiv.textContent = message.sender;
+            
+            // Processa conteúdo com quebras de linha e formatação
+            const contentDiv = document.createElement('div');
+            contentDiv.innerHTML = formatMessageContent(message.content);
+            
+            messageDiv.appendChild(senderDiv);
+            messageDiv.appendChild(contentDiv);
+            messagesDiv.appendChild(messageDiv);
+            
+            // Scroll automático
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        function formatMessageContent(content) {
+            // Substitui quebras de linha por <br>
+            content = content.replace(/\n/g, '<br>');
+            
+            // Formata listas
+            content = content.replace(/•/g, '&bull;');
+            
+            // Formata links (simplificado)
+            content = content.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>');
+            
+            return content;
+        }
+        
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (message && stompClient) {
+
+            	messageInput.disable = true;
+            	
+                // Mostra mensagem do usuário imediatamente
+                showMessage({
+                    sender: "Você",
+                    content: message
+                });
+                
+                stompClient.send('/app/chat', {}, JSON.stringify({
+                    sender: "Fã FURIA",
+                    content: message
+                }));
+                
+                messageInput.value = '';
+                messageInput.disable = false;
+                messageInput.focus();
+            }
+        }
+        
+        // Conectar ao WebSocket quando a página carregar
+        window.onload = function() {
+            connect();
+            
+            setTimeout(() => {
+				showMessage({
+					sender: "Bot FURIA",
+					content: "Olá, Sou o Bot da Furia. Digite /ajuda para ver o que posso fazer!"
+				});
+            }, 1000);
+            
+            // Enviar mensagem ao pressionar Enter
+            messageInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+        };
+    </script>
+</body>
+</html>
