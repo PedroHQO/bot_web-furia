@@ -122,7 +122,7 @@ Um bot de chat interativo para fãs da FURIA eSports, desenvolvido com Spring Bo
      /ajuda
      ```
 
-  ![Ajuda](./image/ajuda.png)
+  ![Ajuda](./images/ajuda.png)
 
 
   Mostra todos os comandos disponíveis
